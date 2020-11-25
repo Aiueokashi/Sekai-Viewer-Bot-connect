@@ -2,6 +2,8 @@ const { Command } = require('discord-akairo');
 const Util = require('../util/Util')
 const Discord = require('discord.js');
 
+// TODO: add music waiting list see https://gabrieltanner.org/blog/dicord-music-bot
+
 const musicNameIdMap = {
   'tell-your-world': 0,
   'ロキ': 1,
@@ -156,6 +158,9 @@ module.exports = class MusicDataCommand extends Command {
     const musicVocals = await Util.fetchData(
       'https://raw.githubusercontent.com/Sekai-World/sekai-master-db-diff/master/musicVocals.json'
     )
+    const musics = await Util.fetchData(
+      'https://raw.githubusercontent.com/Sekai-World/sekai-master-db-diff/master/musics.json'
+    )
     const filteredNames = queryNames.filter(elem => elem.startsWith(items))
     if (filteredNames.length > 1) {
       return message.channel.send(
@@ -173,9 +178,11 @@ module.exports = class MusicDataCommand extends Command {
       );
     }
     const idx = musicNameIdMap[filteredNames[0]];
+    const mid = musics[idx].id
 
-    const vocal = musicVocals.find(elem => elem.musicId === idx).assetbundleName
-    const dispatcher = connection.play(`https://sekai-res.dnaroma.eu/file/sekai-assets/music/short/${vocal}_rip/${vocal}_short.mp3`);
+    const vocal = musicVocals.find(elem => elem.musicId === mid).assetbundleName
+    const dispatcher = connection.play(`https://sekai-res.dnaroma.eu/file/sekai-assets/music/long/${vocal}_rip/${vocal}.mp3`);
 
+    dispatcher.on('finish', () => voiceChannel.leave());
   }
 };
