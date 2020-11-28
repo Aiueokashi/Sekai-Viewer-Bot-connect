@@ -2,7 +2,7 @@ const { Command } = require('discord-akairo');
 const Util = require('../util/Util')
 const Discord = require('discord.js');
 
-// TODO: add music waiting list see https://gabrieltanner.org/blog/dicord-music-bot
+// TODO: add music queue see https://gabrieltanner.org/blog/dicord-music-bot 
 
 const musicNameIdMap = {
   'tell-your-world': 0,
