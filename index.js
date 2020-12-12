@@ -5,6 +5,7 @@ const { SEKAI_TOKEN, SEKAI_PREFIX, SEKAI_OWNERS } = process.env;
 const Client = require('./structures/Client');
 const Akairo = require('discord-akairo');
  const discord = require('discord.js');
+ const Util = require('./util/Util')
 // const { MessageEmbed } = require('discord.js');
 require('./KeepAlive.js')
 const client = new Client({
@@ -14,6 +15,7 @@ const client = new Client({
 	disableEveryone: true,
 	disabledEvents: []
 });
+const { humanizer } = require('humanize-duration');
 const winston = require('winston');
 const activities = require('./assets/json/activity');
 const { stripIndents } = require('common-tags');
@@ -56,10 +58,10 @@ client.on('ready', () => {
 	client.logger.info(
 		`[READY] Logged in as ${client.user.tag}! ID: ${client.user.id}`
 	);
-	client.setInterval(() => {
-		const activity = activities[Math.floor(Math.random() * activities.length)];
-		client.user.setActivity(activity.text, { type: activity.type });
-	}, 15000);
+	client.setInterval(async () => {
+    const events = await Util.fetchData("https://raw.githubusercontent.com/Sekai-World/sekai-master-db-diff/master/events.json")
+		client.user.setActivity(Date.now() <  events.slice(-1)[0].aggregateAt ? `Event Remaining: ${humanizer()(Date.now() - events.slice(-1)[0].aggregateAt)}` : 'No events being held...', { type: "PLAYING" });
+	}, 30000)
 	client.logger.info(
      `[PERMISSIONS] available permissions: ${client.util.permissionNames().join(', ')}`
    );
