@@ -89,7 +89,7 @@ client.listenerHandler.on('error', (listener, err) => {
 
 client.commandHandler.on('error', (err, msg, command) => {
 	client.logger.error(
-		`[COMMAND${command ? `:${command.name}` : ''}]\n${err.stack}`
+		`[COMMAND${command ? `:${command.id}` : ''}]\n${err.stack}`
 	);
 	client.logger
 		.info(
