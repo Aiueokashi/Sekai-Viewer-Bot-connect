@@ -11,6 +11,7 @@ const chalk = require('chalk');
 const owners = require('./owner.json');
 client.owners = owners;
 
+
 require('./Core/loadEvent.js')(client);
 
 
