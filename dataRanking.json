@@ -1,0 +1,33 @@
+{
+    "status": "success",
+    "data": {
+        "rankings": [
+            {
+                "userId": "{sekaiID}",
+                "score": 254646,
+                "rank": 250937,
+                "isOwn": false,
+                "name": "ますたー練習中",
+                "userCard": {
+                    "cardId": 152,
+                    "level": 60,
+                    "masterRank": 0,
+                    "specialTrainingStatus": "done",
+                    "defaultImage": "special_training"
+                },
+                "userProfile": {
+                    "userId": "{sekaiID}",
+                    "word": "ATVKG",
+                    "honorId1": 82,
+                    "honorLevel1": 1,
+                    "honorId2": 115,
+                    "honorLevel2": 1,
+                    "honorId3": 146,
+                    "honorLevel3": 1,
+                    "twitterId": "",
+                    "profileImageType": "leader"
+                }
+            }
+        ]
+    }
+}
