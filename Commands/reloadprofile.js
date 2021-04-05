@@ -3,6 +3,7 @@ const userModel = require('../Models/user');
 const authModel = require('../Models/auth');
 const axios = require('axios');
 const { fetchData } = require('../util/Util');
+const stripIndent = require('strip-indent');
 const { randomBytes } = require('crypto');
 const instance = axios.create({
 	baseURL: process.env.SEKAI_API_BASE_URL
@@ -10,34 +11,31 @@ const instance = axios.create({
 instance.defaults.headers.common['X-API-TOKEN'] = process.env.SEKAI_API_TOKEN;
 
 module.exports = {
-	name: 'authentication',
-	aliases: ['auth'],
+	name: 'reloadprofile',
+	aliases: ['rp'],
 	example: '',
-	description: 'authentication',
-	details: '',
+	description: 'reload user profile',
+	details: 'You can reload sekai user profile 5 times per day.',
 	ownerOnly: true,
 	userPermission: [],
 	disabled: false,
-	cooldown: 1,
+	cooldown: 10,
 
 	async execute(message, args, client) {
 		const EVENT_NAME = await fetchData(
 			'https://raw.githubusercontent.com/Sekai-World/sekai-master-db-diff/master/events.json'
 		);
 		let auth_embed = new MessageEmbed();
-		if (message.guild) {
-			return;
-		}
-		var auth_info = await authModel.findOne({
+		var user_info = await userModel.findOne({
 			discordId: message.author.id
 		});
 
-		if (!auth_info) {
+		if (!user_info) {
 			return message.reply('You need to register your account\n`sv register`');
 		}
 
-		if (auth_info.limit > 4) {
-			return message.reply('You reached limit for authentication.');
+		if (user_info.limit > 4) {
+			return message.reply('You reached limit.');
 		}
 
 		let NowEventId;
@@ -46,41 +44,21 @@ module.exports = {
 		} else {
 			NowEventId = EVENT_NAME[EVENT_NAME.length - 1]['id'];
 		}
+    user_info.limit += 1;
+    await user_info.save()
 
 		try {
-			var response = await instance.get(`/user/${auth_info.sekaiId}/profile`);
-			// check here, if failed, do not continue to get event data
-			//ok
-
-			if (response.data.data.userProfile.word != auth_info.string) {
-				auth_info.limit += 1;
-				await auth_info.save();
-				return message.reply('failed, auth word not found.');
-			}
-			try {
-				var resevent = await instance.get(
-					`/user/${auth_info.sekaiId}/event/${NowEventId}/ranking`
-				);
-				console.log(resevent.data);
-			} catch (error) {
-				console.error(error);
-			}
+			var response = await instance.get(`/user/${user_info.sekaiId}/profile`);
 			console.log('done');
 		} catch (error) {
 			console.error(error);
 		}
+    user_info.sekaiProfile = response.data;
+    await user_info.save();
 
-		let USER = new userModel({
-			guildId: auth_info.guildId,
-			discordId: message.author.id,
-			sekaiId: auth_info.sekaiId,
-			limit: auth_info.limit + 1,
-			sekaiProfile: response.data,
-			sekaiRanking: resevent.data
-		});
 
-		await USER.save();
-		await auth_info.deleteOne();
+
+
 
 		auth_embed
 			.setAuthor(message.author.tag, message.author.displayAvatarURL())
@@ -90,7 +68,7 @@ module.exports = {
 					'**'
 			)
 			.setDescription(
-			`player rank : ${response.data.data.user.userGamedata.rank}\nevent rank : ${resevent.data.data.rankings[0].rank}th\nevent points : ${resevent.data.data.rankings[0].score}points`
+			`player rank : ${response.data.data.user.userGamedata.rank}\n`
 			)
 			.setTimestamp();
 
