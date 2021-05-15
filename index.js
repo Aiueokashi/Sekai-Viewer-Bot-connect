@@ -1,4 +1,4 @@
-require('dotenv').config();
+stoprequire('dotenv').config();
 const { SEKAI_TOKEN, SEKAI_PREFIX, SEKAI_OWNERS } = process.env;
 // const Database = require('@replit/database');
 // const db = new Database();
@@ -54,7 +54,7 @@ client.on('message', message => runLint(message));
 
 client.on('messageUpdate', (oldMessage, message) => runLint(message));
 
-client.on('ready', () => {
+client.on('ready', async () => {
 	client.logger.info(
 		`[READY] Logged in as ${client.user.tag}! ID: ${client.user.id}`
 	);
@@ -68,6 +68,7 @@ client.on('ready', () => {
    client.logger.info(
      `[CHANNELS] ${client.channels.cache.array()}`
    );
+
 });
 
 client.on('disconnect', event => {
@@ -96,7 +97,6 @@ client.commandHandler.on('error', (err, msg, command) => {
 			stripIndents`
 		error: \`${err.message}\`exit...`
 		)
-		.catch(() => null);
 });
 
 /*(async () => {

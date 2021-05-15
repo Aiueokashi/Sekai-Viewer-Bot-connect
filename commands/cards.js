@@ -1,12 +1,7 @@
-const {
-	Command,
-	Argument
-} = require('discord-akairo');
-const Util = require('../util/Util');
-const Discord = require('discord.js');
-const {
-	humanizer
-} = require('humanize-duration');
+const { Command, Argument } = require('discord-akairo');
+const { fetchData } = require('../util/Util');
+const { MessageEmbed } = require('discord.js');
+const { humanizer } = require('humanize-duration');
 const RARITY_POWER = {
 	1: ['19', '39', '59'],
 	2: ['29', '59', '89'],
@@ -69,13 +64,15 @@ module.exports = class CardDataCommand extends Command {
 			aliases: ['card'],
 			channel: 'guild',
 			ownerOnly: false,
-			args: [{
-				id: 'cardPrefix',
-				match: 'content',
-				prompt: {
-					start: 'Please tell me a card prefix'
+			args: [
+				{
+					id: 'cardPrefix',
+					match: 'content',
+					prompt: {
+						start: 'Please tell me a card prefix'
+					}
 				}
-			}]
+			]
 		});
 	}
 
@@ -91,6 +88,16 @@ module.exports = class CardDataCommand extends Command {
 		const CARD_SKILL = await fetchData(
 			'https://raw.githubusercontent.com/Sekai-World/sekai-master-db-diff/master/skills.json'
 		);
+		const CHARACTER_NAME_EN = await fetchData(
+			'https://raw.githubusercontent.com/Sekai-World/sekai-i18n/main/en/character_name.json'
+		);
+		const CHARACTER_PROFILE_EN = await fetchData(
+			'https://raw.githubusercontent.com/Sekai-World/sekai-i18n/main/en/character_profile.json'
+		);
+		const CARD_PREFIX_EN = await fetchData(
+			'https://raw.githubusercontent.com/Sekai-World/sekai-i18n/main/en/card_prefix.json'
+		);
+		const CARD_PREFIX_EN_ARRAY = Object.entries(CARD_PREFIX_EN);
 		var cardId = 0;
 		var CARD_POS = -1;
 		var cardBox = [];
@@ -101,8 +108,8 @@ module.exports = class CardDataCommand extends Command {
 		for (let i = 0; i < CARD_PREFIX.length; i++) {
 			if (
 				CARD_PREFIX[i].prefix
-				.toLowerCase()
-				.endsWith(args.join(' ').toLowerCase())
+					.toLowerCase()
+					.endsWith(args.join(' ').toLowerCase())
 			) {
 				cardId = CARD_PREFIX[i].id;
 				CARD_POS = i;
@@ -111,8 +118,8 @@ module.exports = class CardDataCommand extends Command {
 				}
 			} else if (
 				CARD_PREFIX[i].prefix
-				.toLowerCase()
-				.startsWith(args.join(' ').toLowerCase())
+					.toLowerCase()
+					.startsWith(args.join(' ').toLowerCase())
 			) {
 				cardId = CARD_PREFIX[i].id;
 				CARD_POS = i;
@@ -121,14 +128,28 @@ module.exports = class CardDataCommand extends Command {
 				}
 			}
 		}
-
+		for (const [key, value] of CARD_PREFIX_EN_ARRAY) {
+			if (value.toLowerCase().endsWith(args.join(' ').toLowerCase())) {
+				cardId = key;
+				CARD_POS = key - 1;
+				if (!cardBox.includes(CARD_POS)) {
+					cardBox.push(CARD_POS);
+				}
+			} else if (value.toLowerCase().startsWith(args.join(' ').toLowerCase())) {
+				cardId = key;
+				CARD_POS = key - 1;
+				if (!cardBox.includes(CARD_POS)) {
+					cardBox.push(CARD_POS);
+				}
+			}
+		}
 		if (cardId == 0) {
-			for (chara of CHARACTER_NAME) {
+			for (const chara of CHARACTER_NAME) {
 				if (
 					args
-					.join(' ')
-					.toUpperCase()
-					.endsWith(chara.givenName) ||
+						.join(' ')
+						.toUpperCase()
+						.endsWith(chara.givenName) ||
 					args.join(' ').endsWith(chara.givenNameRuby)
 				) {
 					charaId = chara.id;
@@ -141,6 +162,38 @@ module.exports = class CardDataCommand extends Command {
 					charaId = chara.id;
 					if (!charaBox1.includes(chara.id)) {
 						charaBox1.push(chara.id);
+					}
+				}
+			}
+			if (cardId == 0) {
+				const CHARACTER_NAME_EN_ARRAY = Object.entries(CHARACTER_NAME_EN);
+				const CHARACTER_PROFILE_EN_ARRAY = Object.entries(CHARACTER_PROFILE_EN);
+				if (charaId == 0) {
+					for (let i = 0; i < CHARACTER_NAME_EN_ARRAY.length; i++) {
+						if (
+							args
+								.join(' ')
+								.toUpperCase()
+								.endsWith(CHARACTER_NAME_EN_ARRAY[i][1].givenName.toUpperCase())
+						) {
+							charaId = i + 1;
+							charaBox1 = [];
+							break;
+						} else if (
+							CHARACTER_NAME_EN_ARRAY[i][1].firstName === undefined
+								? charaId === 99999
+								: args
+										.join(' ')
+										.toUpperCase()
+										.startsWith(
+											CHARACTER_NAME_EN_ARRAY[i][1].firstName.toUpperCase()
+										)
+						) {
+							charaId = i + 1;
+							if (!charaBox1.includes(i + 1)) {
+								charaBox1.push(i + 1);
+							}
+						}
 					}
 				}
 			}
@@ -167,7 +220,7 @@ module.exports = class CardDataCommand extends Command {
 							if (message.author.id !== MESSAGE_AUTHOR_ID) {
 								return false;
 							}
-							const pattern = /^[0-9]{1,2}(\s*,\s*[0-9]{1,2})*$/g;
+							const pattern = /^[0-9]{1,3}(\s*,\s*[0-9]{1,3})*$/g;
 							return pattern.test(message.content);
 						}
 						message.channel.activeCollector = true;
@@ -180,7 +233,7 @@ module.exports = class CardDataCommand extends Command {
 						charaId = reply;
 					} catch (error) {
 						message.channel.send(
-							new MessageEmbed().setColor('RED').setTitle('タイムアウト')
+							new MessageEmbed().setColor('RED').setTitle('Timeout')
 						);
 						message.channel.activeCollector = false;
 						return;
@@ -252,100 +305,100 @@ module.exports = class CardDataCommand extends Command {
 		const RECOVER_SKILL_ID = CARD_PREFIX[CARD_POS].skillId + 6;
 		const RECOVER_SKILL_ID_2 = CARD_PREFIX[CARD_POS].skillId + 3;
 		const SKILL =
-			CARD_PREFIX[CARD_POS].skillId > 4 && CARD_PREFIX[CARD_POS].skillId < 11 ?
-			CARD_PREFIX[CARD_POS].skillId < 8 ?
-			CARD_SKILL[CARD_PREFIX[CARD_POS].skillId - 1].description
-			.replace(
-				'{{' + CARD_PREFIX[CARD_POS].skillId + ';d}}',
-				CARD_SKILL[CARD_PREFIX[CARD_POS].skillId - 1].skillEffects[0]
-				.skillEffectDetails[3].activateEffectDuration
-			)
-			.replace(
-				'{{' + CARD_PREFIX[CARD_POS].skillId + ';v}}',
-				CARD_SKILL[CARD_PREFIX[CARD_POS].skillId - 1].skillEffects[0]
-				.skillEffectDetails[3].activateEffectValue
-			)
-			.replace(
-				'{{' + SKILL_DURATION + ';d}}',
-				CARD_SKILL[CARD_PREFIX[CARD_POS].skillId - 1].skillEffects[1]
-				.skillEffectDetails[3].activateEffectDuration
-			) :
-			CARD_SKILL[CARD_PREFIX[CARD_POS].skillId - 1].description
-			.replace(
-				'{{' + RECOVER_SKILL_ID_2 + ';d}}',
-				CARD_SKILL[CARD_PREFIX[CARD_POS].skillId - 1].skillEffects[0]
-				.skillEffectDetails[3].activateEffectDuration
-			)
-			.replace(
-				'{{' + RECOVER_SKILL_ID + ';v}}',
-				CARD_SKILL[CARD_PREFIX[CARD_POS].skillId - 1].skillEffects[1]
-				.skillEffectDetails[3].activateEffectValue
-			)
-			.replace(
-				'{{' + RECOVER_SKILL_ID_2 + ';v}}',
-				CARD_SKILL[CARD_PREFIX[CARD_POS].skillId - 1].skillEffects[0]
-				.skillEffectDetails[3].activateEffectValue
-			) :
-			CARD_PREFIX[CARD_POS].skillId === 11 ?
-			CARD_SKILL[CARD_PREFIX[CARD_POS].skillId - 1].description
-			.replace(
-				'{{' + PERFECT_SKILL_ID + ';d}}',
-				CARD_SKILL[CARD_PREFIX[CARD_POS].skillId - 1].skillEffects[0]
-				.skillEffectDetails[3].activateEffectDuration
-			)
-			.replace(
-				'{{' + PERFECT_SKILL_ID + ';v}}',
-				CARD_SKILL[CARD_PREFIX[CARD_POS].skillId - 1].skillEffects[0]
-				.skillEffectDetails[3].activateEffectValue
-			) :
-			CARD_SKILL[CARD_PREFIX[CARD_POS].skillId - 1].description
-			.replace(
-				'{{' + CARD_PREFIX[CARD_POS].skillId + ';d}}',
-				CARD_SKILL[CARD_PREFIX[CARD_POS].skillId - 1].skillEffects[0]
-				.skillEffectDetails[3].activateEffectDuration
-			)
-			.replace(
-				'{{' + CARD_PREFIX[CARD_POS].skillId + ';v}}',
-				CARD_SKILL[CARD_PREFIX[CARD_POS].skillId - 1].skillEffects[0]
-				.skillEffectDetails[3].activateEffectValue
-			);
+			CARD_PREFIX[CARD_POS].skillId > 4 && CARD_PREFIX[CARD_POS].skillId < 11
+				? CARD_PREFIX[CARD_POS].skillId < 8
+					? CARD_SKILL[CARD_PREFIX[CARD_POS].skillId - 1].description
+							.replace(
+								'{{' + CARD_PREFIX[CARD_POS].skillId + ';d}}',
+								CARD_SKILL[CARD_PREFIX[CARD_POS].skillId - 1].skillEffects[0]
+									.skillEffectDetails[3].activateEffectDuration
+							)
+							.replace(
+								'{{' + CARD_PREFIX[CARD_POS].skillId + ';v}}',
+								CARD_SKILL[CARD_PREFIX[CARD_POS].skillId - 1].skillEffects[0]
+									.skillEffectDetails[3].activateEffectValue
+							)
+							.replace(
+								'{{' + SKILL_DURATION + ';d}}',
+								CARD_SKILL[CARD_PREFIX[CARD_POS].skillId - 1].skillEffects[1]
+									.skillEffectDetails[3].activateEffectDuration
+							)
+					: CARD_SKILL[CARD_PREFIX[CARD_POS].skillId - 1].description
+							.replace(
+								'{{' + RECOVER_SKILL_ID_2 + ';d}}',
+								CARD_SKILL[CARD_PREFIX[CARD_POS].skillId - 1].skillEffects[0]
+									.skillEffectDetails[3].activateEffectDuration
+							)
+							.replace(
+								'{{' + RECOVER_SKILL_ID + ';v}}',
+								CARD_SKILL[CARD_PREFIX[CARD_POS].skillId - 1].skillEffects[1]
+									.skillEffectDetails[3].activateEffectValue
+							)
+							.replace(
+								'{{' + RECOVER_SKILL_ID_2 + ';v}}',
+								CARD_SKILL[CARD_PREFIX[CARD_POS].skillId - 1].skillEffects[0]
+									.skillEffectDetails[3].activateEffectValue
+							)
+				: CARD_PREFIX[CARD_POS].skillId === 11
+					? CARD_SKILL[CARD_PREFIX[CARD_POS].skillId - 1].description
+							.replace(
+								'{{' + PERFECT_SKILL_ID + ';d}}',
+								CARD_SKILL[CARD_PREFIX[CARD_POS].skillId - 1].skillEffects[0]
+									.skillEffectDetails[3].activateEffectDuration
+							)
+							.replace(
+								'{{' + PERFECT_SKILL_ID + ';v}}',
+								CARD_SKILL[CARD_PREFIX[CARD_POS].skillId - 1].skillEffects[0]
+									.skillEffectDetails[3].activateEffectValue
+							)
+					: CARD_SKILL[CARD_PREFIX[CARD_POS].skillId - 1].description
+							.replace(
+								'{{' + CARD_PREFIX[CARD_POS].skillId + ';d}}',
+								CARD_SKILL[CARD_PREFIX[CARD_POS].skillId - 1].skillEffects[0]
+									.skillEffectDetails[3].activateEffectDuration
+							)
+							.replace(
+								'{{' + CARD_PREFIX[CARD_POS].skillId + ';v}}',
+								CARD_SKILL[CARD_PREFIX[CARD_POS].skillId - 1].skillEffects[0]
+									.skillEffectDetails[3].activateEffectValue
+							);
 
 		const pow1 =
-			CARD_PREFIX[CARD_POS].rarity > 2 ?
-			CARD_PREFIX[CARD_POS].rarity === 4 ?
-			CARD_PREFIX[CARD_POS].cardParameters[
-				RARITY_POWER[CARD_PREFIX[CARD_POS].rarity][0]
-			].power + 400 :
-			CARD_PREFIX[CARD_POS].cardParameters[
-				RARITY_POWER[CARD_PREFIX[CARD_POS].rarity][0]
-			].power + 300 :
-			CARD_PREFIX[CARD_POS].cardParameters[
-				RARITY_POWER[CARD_PREFIX[CARD_POS].rarity][0]
-			].power;
+			CARD_PREFIX[CARD_POS].rarity > 2
+				? CARD_PREFIX[CARD_POS].rarity === 4
+					? CARD_PREFIX[CARD_POS].cardParameters[
+							RARITY_POWER[CARD_PREFIX[CARD_POS].rarity][0]
+					  ].power + 400
+					: CARD_PREFIX[CARD_POS].cardParameters[
+							RARITY_POWER[CARD_PREFIX[CARD_POS].rarity][0]
+					  ].power + 300
+				: CARD_PREFIX[CARD_POS].cardParameters[
+						RARITY_POWER[CARD_PREFIX[CARD_POS].rarity][0]
+				  ].power;
 		const pow2 =
-			CARD_PREFIX[CARD_POS].rarity > 2 ?
-			CARD_PREFIX[CARD_POS].rarity === 4 ?
-			CARD_PREFIX[CARD_POS].cardParameters[
-				RARITY_POWER[CARD_PREFIX[CARD_POS].rarity][1]
-			].power + 400 :
-			CARD_PREFIX[CARD_POS].cardParameters[
-				RARITY_POWER[CARD_PREFIX[CARD_POS].rarity][1]
-			].power + 300 :
-			CARD_PREFIX[CARD_POS].cardParameters[
-				RARITY_POWER[CARD_PREFIX[CARD_POS].rarity][1]
-			].power;
+			CARD_PREFIX[CARD_POS].rarity > 2
+				? CARD_PREFIX[CARD_POS].rarity === 4
+					? CARD_PREFIX[CARD_POS].cardParameters[
+							RARITY_POWER[CARD_PREFIX[CARD_POS].rarity][1]
+					  ].power + 400
+					: CARD_PREFIX[CARD_POS].cardParameters[
+							RARITY_POWER[CARD_PREFIX[CARD_POS].rarity][1]
+					  ].power + 300
+				: CARD_PREFIX[CARD_POS].cardParameters[
+						RARITY_POWER[CARD_PREFIX[CARD_POS].rarity][1]
+				  ].power;
 		const pow3 =
-			CARD_PREFIX[CARD_POS].rarity > 2 ?
-			CARD_PREFIX[CARD_POS].rarity === 4 ?
-			CARD_PREFIX[CARD_POS].cardParameters[
-				RARITY_POWER[CARD_PREFIX[CARD_POS].rarity][2]
-			].power + 400 :
-			CARD_PREFIX[CARD_POS].cardParameters[
-				RARITY_POWER[CARD_PREFIX[CARD_POS].rarity][2]
-			].power + 300 :
-			CARD_PREFIX[CARD_POS].cardParameters[
-				RARITY_POWER[CARD_PREFIX[CARD_POS].rarity][2]
-			].power;
+			CARD_PREFIX[CARD_POS].rarity > 2
+				? CARD_PREFIX[CARD_POS].rarity === 4
+					? CARD_PREFIX[CARD_POS].cardParameters[
+							RARITY_POWER[CARD_PREFIX[CARD_POS].rarity][2]
+					  ].power + 400
+					: CARD_PREFIX[CARD_POS].cardParameters[
+							RARITY_POWER[CARD_PREFIX[CARD_POS].rarity][2]
+					  ].power + 300
+				: CARD_PREFIX[CARD_POS].cardParameters[
+						RARITY_POWER[CARD_PREFIX[CARD_POS].rarity][2]
+				  ].power;
 		const TOTAL_POWER = pow1 + pow2 + pow3;
 
 		let card_embed = new MessageEmbed()
@@ -428,12 +481,12 @@ module.exports = class CardDataCommand extends Command {
 		card_embed
 			.addField('Skill Name', `${CARD_PREFIX[CARD_POS].cardSkillName}`, false)
 			.addField('Skill', `${SKILL}`);
-		CARD_PREFIX[CARD_POS].supportUnit === 'none' ?
-			null :
-			card_embed.addField(
-				'Support Unit',
-				UNIT[CARD_PREFIX[CARD_POS].supportUnit]
-			);
+		CARD_PREFIX[CARD_POS].supportUnit === 'none'
+			? null
+			: card_embed.addField(
+					'Support Unit',
+					UNIT[CARD_PREFIX[CARD_POS].supportUnit]
+			  );
 
 		message.channel.send(card_embed);
 
