@@ -6,7 +6,7 @@ const Client = require('./structures/Client');
 const Akairo = require('discord-akairo');
  const discord = require('discord.js');
  const Util = require('./util/Util')
-// const { MessageEmbed } = require('discord.js');
+// const { MesageEmbed } = require('discord.js');
 require('./KeepAlive.js')
 const client = new Client({
 	partials: ['MESSAGE', 'CHANNEL', 'REACTION'],
